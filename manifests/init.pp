@@ -6,6 +6,13 @@ class allura {
   exec { "get_allura": 
     command => "git clone git://git.code.sf.net/p/allura/git.git allura",
     cwd => "/var",
+    creates => '/var/allura'
+  }
+
+  exec { "update_allura":
+    onlyif => '/usr/bin/test -f /var/allura',
+    command => 'git pull',
+    cwd => "/var/allura",
   }
 
   case $operatingsystem {
@@ -56,6 +63,18 @@ class allura {
       package { "mongo-10gen": ensure => installed, require => Yumrepo["10gen"]}
       package { "mongo-server-10gen": ensure => installed, require => Yumrepo["10gen"]}
     }
+  }
+
+  file { "/tmp/loadout.sh":
+    mode => 0755,
+    owner => root,
+    group => root,
+    source => "puppet:///modules/allura/loadout.sh",  
+  } -> 
+  exec { "sh /tmp/loadout.sh": 
+    cwd => "/var/allura",
+    creates => "/var/scm/git",
+    timeout => 600,
   }
   # resources
 }
