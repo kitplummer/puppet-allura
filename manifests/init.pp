@@ -2,11 +2,48 @@
 #
 #
 class allura {
+  
+  exec { "get_allura": 
+    command => "git clone git://git.code.sf.net/p/allura/git.git allura",
+    cwd => "/var",
+  }
 
   case $operatingsystem {
     ubuntu: {
       package { "mongodb-server": ensure => installed }
       package { "mongodb-clients": ensure => installed }
+      package { "git-core": ensure => installed }
+      package { "subversion": ensure => installed }
+      package { "python-svn": ensure => installed }
+      package { "default-jre-headless": ensure => installed }
+      package { "libssl-dev": ensure => installed }
+      package { "libldap2-dev": ensure => installed }
+      package { "libsasl2-dev": ensure => installed }
+      package { "libjpeg8-dev": ensure => installed }
+      package { "zlib1g-dev": ensure => installed }
+      package { "python-pip": ensure => installed }
+
+      file { '/usr/lib/x86_64-linux-gnu/libz.so':
+        ensure => link,
+        target => '/usr/lib/libz.so',
+        require => Package["zlib1g-dev"]
+      }
+      file { '/usr/lib/x86_64-linux-gnu/libjpeg.so':
+        ensure => link,
+        target => '/usr/lib/libjpeg.so',
+        require => Package["libjpeg8-dev"]
+      } 
+
+      include python::dev
+      include python::venv    
+
+      python::venv::isolate { "/usr/local/venv/allura": 
+        require => Exec["get_allura"],
+        requirements => "/var/allura/requirements.txt",
+      }
+
+
+
     }
     centos: {
       # 10gen Yum repo
