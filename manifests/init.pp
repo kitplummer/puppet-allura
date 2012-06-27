@@ -17,6 +17,8 @@ class allura {
 
   case $operatingsystem {
     ubuntu: {
+      package { "solr-common": ensure => installed }
+      package { "solr-tomcat": ensure => installed }
       package { "mongodb-server": ensure => installed }
       package { "mongodb-clients": ensure => installed }
       package { "git-core": ensure => installed }
@@ -31,6 +33,21 @@ class allura {
       package { "python-dev": ensure => installed }
       package { "python-pip": ensure => installed }
 
+      service { "tomcat6":
+        ensure => running,
+        enable => true
+      }
+
+      $tomcat_port = 8893
+
+      file { '/etc/tomcat6/server.xml':
+        content => template("allura/tomcat_server.xml.erb"),
+        mode => 0644,
+        group => "tomcat6",
+        require => Package["solr-tomcat"],
+        notify => Service["tomcat6"]
+      }
+      
       file { '/usr/lib/x86_64-linux-gnu/libz.so':
         ensure => link,
         target => '/usr/lib/libz.so',
@@ -50,13 +67,24 @@ class allura {
       exec { "pip install -r requirements.txt":
         cwd => "/var/allura",
         require => Exec["get_allura"],
-        timeout => 600,
+        timeout => 1200,
+        returns => [0,1],
       }
 
       exec { "start_taskd":
         cwd => "/var/allura/Allura",
         command => "nohup paster taskd development.ini > /var/allura/logs/taskd.log &",
         require => [File["/var/allura/logs"], Exec["pip install -r requirements.txt"]],
+      }
+
+      exec { "init_forge_db":
+        cwd => "/var/allura/Allura",
+        command => "paster setup-app development.ini",
+        require => Exec["start_taskd"],
+      } ->
+      exec { "start_forge":
+        cwd => "/var/allura/Allura",
+        command => "nohup paster serve --reload development.ini > /var/allura/logs/tg.log &"
       }
 
     }
