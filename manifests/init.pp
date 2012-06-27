@@ -28,6 +28,7 @@ class allura {
       package { "libsasl2-dev": ensure => installed }
       package { "libjpeg8-dev": ensure => installed }
       package { "zlib1g-dev": ensure => installed }
+      package { "python-dev": ensure => installed }
       package { "python-pip": ensure => installed }
 
       file { '/usr/lib/x86_64-linux-gnu/libz.so':
@@ -41,15 +42,22 @@ class allura {
         require => Package["libjpeg8-dev"]
       } 
 
-      include python::dev
-      include python::venv    
-
-      python::venv::isolate { "/usr/local/venv/allura": 
-        require => Exec["get_allura"],
-        requirements => "/var/allura/requirements.txt",
+      file { "/var/allura/logs":
+        ensure => directory,
+        mode => 0777,
       }
 
+      exec { "pip install -r requirements.txt":
+        cwd => "/var/allura",
+        require => Exec["get_allura"],
+        timeout => 600,
+      }
 
+      exec { "start_taskd":
+        cwd => "/var/allura/Allura",
+        command => "nohup paster taskd development.ini > /var/allura/logs/taskd.log &",
+        require => [File["/var/allura/logs"], Exec["pip install -r requirements.txt"]],
+      }
 
     }
     centos: {
@@ -70,11 +78,13 @@ class allura {
     owner => root,
     group => root,
     source => "puppet:///modules/allura/loadout.sh",  
-  } -> 
+  }
+
   exec { "sh /tmp/loadout.sh": 
     cwd => "/var/allura",
     creates => "/var/scm/git",
     timeout => 600,
+    require => [File["/tmp/loadout.sh"],Exec["get_allura"]]
   }
   # resources
 }
