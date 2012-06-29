@@ -74,7 +74,7 @@ class allura {
       exec { "start_taskd":
         cwd => "/var/allura/Allura",
         command => "nohup paster taskd development.ini > /var/allura/logs/taskd.log &",
-        require => [File["/var/allura/logs"], Exec["pip install -r requirements.txt"]],
+        creates => "/var/allura/Allura/taskd.pid"
       }
 
       exec { "init_forge_db":
@@ -87,6 +87,7 @@ class allura {
         cwd => "/var/allura/Allura",
         command => "nohup paster serve --daemon development.ini --pid-file=serve.pid --log-file=/var/allura/logs/tg.log &",
         require => [File["/etc/tomcat6/server.xml"],Exec["init_forge_db"],Exec["start_taskd"]],
+        creates => "/var/allura/Allura/serve.pid"
       }
 
     }
