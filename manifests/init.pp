@@ -81,10 +81,12 @@ class allura {
         cwd => "/var/allura/Allura",
         command => "paster setup-app development.ini",
         require => Exec["start_taskd"],
-      } ->
+      }
+
       exec { "start_forge":
         cwd => "/var/allura/Allura",
-        command => "nohup paster serve --reload development.ini > /var/allura/logs/tg.log &"
+        command => "nohup paster serve --daemon development.ini --pid-file=serve.pid --log-file=/var/allura/logs/tg.log &",
+        require => [File["/etc/tomcat6/server.xml"],Exec["init_forge_db"],Exec["start_taskd"]],
       }
 
     }
