@@ -23,8 +23,18 @@ end
 ```
 git clone https://github.com/kitplummer/puppet-allura.git allura
 ```
+4. Now create an ```allura.pp``` file in the ```manifests``` subdirectory and fill it with:
 
-4. ```vagrant reload``` <- will restart the VM.
+```
+Exec {
+  path => "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+}
+
+class { "allura": }
+```
+
+5
+. ```vagrant reload``` <- will restart the VM.
 
 ---
 
